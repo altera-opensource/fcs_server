@@ -115,6 +115,7 @@ void handleIncomingMessage(unsigned char *messageBuffer, size_t messageSize,
         don't prepare any message, server should disconnect
         - emulates system console behavior
         */
+        delete[] outPayloadBuffer;
         return;
     }
     verifierProtocol.prepareResponseMessage(
