@@ -77,7 +77,6 @@ int32_t FcsCommunication::getChipId(
     outSize = sizeof(data.com_paras.c_id);
     *outBuffer = new unsigned char[outSize];
 
-    //TODO: find out why low is first and high is second
     Utils::encodeToLittleEndianBuffer(
         data.com_paras.c_id.chip_id_low,
         *outBuffer);
