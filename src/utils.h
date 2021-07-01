@@ -33,27 +33,37 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdexcept>
 #include <stdint.h>
+#include <vector>
 
 class Utils
 {
     public:
         static uint32_t decodeFromLittleEndianBuffer(
-            unsigned char buffer[sizeof(uint32_t)])
+            std::vector<uint8_t> &buffer, size_t offset = 0)
         {
-            return (uint32_t)((((buffer)[3]) << 24)
-                            + (((buffer)[2]) << 16)
-                            + (((buffer)[1]) << 8)
-                            + ((buffer)[0]));
+            if (buffer.size() < offset + sizeof(uint32_t))
+            {
+                throw std::invalid_argument("decodeFromLittleEndianBuffer: buffer too small");
+            }
+            return (uint32_t)((((buffer)[3 + offset]) << 24)
+                            + (((buffer)[2 + offset]) << 16)
+                            + (((buffer)[1 + offset]) << 8)
+                            + ((buffer)[0 + offset]));
         }
 
         static void encodeToLittleEndianBuffer(
-            uint32_t uintValue, unsigned char buffer[sizeof(uint32_t)])
+            uint32_t uintValue, std::vector<uint8_t> &buffer, size_t offset = 0)
         {
-            buffer[3] = (unsigned char)(uintValue >> 24);
-            buffer[2] = (unsigned char)(uintValue >> 16);
-            buffer[1] = (unsigned char)(uintValue >> 8);
-            buffer[0] = (unsigned char)uintValue;
+            if (buffer.size() < offset + sizeof(uint32_t))
+            {
+                throw std::invalid_argument("encodeToLittleEndianBuffer: buffer too small");
+            }
+            buffer[3 + offset] = (unsigned char)(uintValue >> 24);
+            buffer[2 + offset] = (unsigned char)(uintValue >> 16);
+            buffer[1 + offset] = (unsigned char)(uintValue >> 8);
+            buffer[0 + offset] = (unsigned char)uintValue;
         }
 };
 

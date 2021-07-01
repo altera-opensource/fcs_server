@@ -35,6 +35,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdint.h>
 #include <stddef.h>
+#include <vector>
 
 #include "intel_fcs-ioctl.h"
 #include "intel_fcs_structs.h"
@@ -42,16 +43,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class FcsCommunication
 {
     public:
-        static int32_t getChipId(size_t &outSize, unsigned char **outBuffer);
-        static int32_t sigmaTeardown(uint32_t sessionId);
-        static int32_t createAttestationSubkey(
-            unsigned char *inBuffer, size_t inSize,
-            unsigned char **outBuffer, size_t &outSize);
-        static int32_t getMeasurement(
-            unsigned char *inBuffer, size_t inSize,
-            unsigned char **outBuffer, size_t &outSize);
-
-        static const int32_t kIoctlFailedError = -1;
+        static bool getChipId(
+            std::vector<uint8_t> &outBuffer,
+            int32_t &fcsStatus);
+        static bool sigmaTeardown(uint32_t sessionId, int32_t &fcsStatus);
+        static bool createAttestationSubkey(
+            std::vector<uint8_t> &inBuffer,
+            std::vector<uint8_t> &outBuffer,
+            int32_t &fcsStatus);
+        static bool getMeasurement(
+            std::vector<uint8_t> &inBuffer,
+            std::vector<uint8_t> &outBuffer,
+            int32_t &fcsStatus);
 
     private:
         static bool sendIoctl(intel_fcs_dev_ioctl *data, unsigned long commandCode);

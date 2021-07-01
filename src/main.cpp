@@ -51,52 +51,51 @@ void onSignal(sig_atomic_t s)
     }
 }
 
-void handleIncomingMessage(unsigned char *messageBuffer, size_t messageSize,
-    unsigned char **responseBuffer, size_t &responseSize)
+void handleIncomingMessage(
+    std::vector<uint8_t> &messageBuffer,
+    std::vector<uint8_t> &responseBuffer)
 {
     VerifierProtocol verifierProtocol;
-    if (!verifierProtocol.parseMessage(messageBuffer, messageSize))
+    if (!verifierProtocol.parseMessage(messageBuffer))
     {
         Logger::log("Couldn't parse incoming message", Error);
         verifierProtocol.prepareResponseMessage(
-            nullptr, 0, responseBuffer, responseSize,
-            verifierProtocol.getErrorCode());
+            std::vector<uint8_t>(), responseBuffer, verifierProtocol.getErrorCode());
         return;
     }
 
-    size_t outPayloadSize = 0;
-    unsigned char *outPayloadBuffer = nullptr;
-    int fcsStatus;
+    std::vector<uint8_t> payloadFromFcs;
+    bool fcsCallSucceeded = false;
+    int32_t statusReturnedFromFcs;
     switch (verifierProtocol.getCommandCode())
     {
         case getChipId:
         {
-            fcsStatus = FcsCommunication::getChipId(
-                outPayloadSize, &outPayloadBuffer);
+            fcsCallSucceeded = FcsCommunication::getChipId(
+                payloadFromFcs, statusReturnedFromFcs);
         }
         break;
         case sigmaTeardown:
         {
-            fcsStatus = FcsCommunication::sigmaTeardown(
-                verifierProtocol.getSigmaTeardownSessionId());
+            fcsCallSucceeded = FcsCommunication::sigmaTeardown(
+                verifierProtocol.getSigmaTeardownSessionId(),
+                statusReturnedFromFcs);
         }
         break;
         case createAttestationSubKey:
         {
-            fcsStatus = FcsCommunication::createAttestationSubkey(
+            fcsCallSucceeded = FcsCommunication::createAttestationSubkey(
                 verifierProtocol.getIncomingPayload(),
-                verifierProtocol.getIncomingPayloadSize(),
-                &outPayloadBuffer,
-                outPayloadSize);
+                payloadFromFcs,
+                statusReturnedFromFcs);
         }
         break;
         case getMeasurement:
         {
-            fcsStatus = FcsCommunication::getMeasurement(
+            fcsCallSucceeded = FcsCommunication::getMeasurement(
                 verifierProtocol.getIncomingPayload(),
-                verifierProtocol.getIncomingPayloadSize(),
-                &outPayloadBuffer,
-                outPayloadSize);
+                payloadFromFcs,
+                statusReturnedFromFcs);
         }
         break;
         default:
@@ -104,25 +103,21 @@ void handleIncomingMessage(unsigned char *messageBuffer, size_t messageSize,
             Logger::log("Command code not recognized: "
                 + std::to_string(verifierProtocol.getCommandCode()));
             verifierProtocol.prepareResponseMessage(
-                nullptr, 0, responseBuffer, responseSize, unknownCommand);
+                std::vector<uint8_t>(), responseBuffer, unknownCommand);
             return;
         }
         break;
     }
-    if (fcsStatus == FcsCommunication::kIoctlFailedError)
+    if (!fcsCallSucceeded)
     {
         /*
         don't prepare any message, server should disconnect
         - emulates system console behavior
         */
-        delete[] outPayloadBuffer;
         return;
     }
     verifierProtocol.prepareResponseMessage(
-        outPayloadBuffer, outPayloadSize,
-        responseBuffer, responseSize,
-        fcsStatus);
-    delete[] outPayloadBuffer;
+        payloadFromFcs, responseBuffer, statusReturnedFromFcs);
 }
 
 void printUsageAndExit()
@@ -167,6 +162,17 @@ int main(int argc, char* argv[])
         printUsageAndExit();
     }
 
-    server.run(portNumber, &handleIncomingMessage);
+    try
+    {
+        Logger::log("FCS Server build on: "
+            + std::string(__DATE__) + " " + std::string(__TIME__), Debug);
+        server.run(portNumber, &handleIncomingMessage);
+    }
+    catch(const std::exception& e)
+    {
+        Logger::log(e.what(), Fatal);
+        exit(1);
+    }
+
     return 0;
 }

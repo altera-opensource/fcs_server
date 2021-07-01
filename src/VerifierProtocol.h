@@ -36,6 +36,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CommandHeader.h"
 
 #include <stddef.h>
+#include <vector>
 
 #define RESERVED_BYTES_COUNT 4
 #define WORD_SIZE 4
@@ -63,22 +64,17 @@ enum ErrorCode
 class VerifierProtocol
 {
     public:
-        bool parseMessage(
-            unsigned char *messageBuffer, size_t messageSize);
+        bool parseMessage(std::vector<uint8_t> &messageBuffer);
         void prepareResponseMessage(
-            unsigned char *payloadBuffer, size_t payloadSize,
-            unsigned char **responseBuffer, size_t &responseSize,
+            std::vector<uint8_t> const &payloadBuffer,
+            std::vector<uint8_t> &responseBuffer,
             const int returnCode);
         uint32_t getCommandCode();
         uint32_t getSigmaTeardownSessionId();
 
-        unsigned char *getIncomingPayload()
+        std::vector<uint8_t> &getIncomingPayload()
         {
             return incomingPayload;
-        }
-        size_t getIncomingPayloadSize()
-        {
-            return incomingPayloadSize;
         }
         ErrorCode getErrorCode()
         {
@@ -87,9 +83,8 @@ class VerifierProtocol
 
     private:
         bool isMagicWordCorrect();
-        uint32_t getPayloadOffset();
-        unsigned char *incomingPayload;
-        size_t incomingPayloadSize;
+        size_t getPayloadOffset();
+        std::vector<uint8_t> incomingPayload;
         CommandHeader incomingHeader;
         ErrorCode errorCode = genericError;
 };

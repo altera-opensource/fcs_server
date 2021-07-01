@@ -35,13 +35,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CommandHeader.h"
 #include "utils.h"
 
-void CommandHeader::parse(unsigned char buffer[sizeof(uint32_t)])
+void CommandHeader::parse(std::vector<uint8_t> &buffer)
 {
     uint32_t header = Utils::decodeFromLittleEndianBuffer(buffer);
     fromUint32(header);
 }
 
-void CommandHeader::encode(unsigned char buffer[sizeof(uint32_t)])
+void CommandHeader::encode(std::vector<uint8_t> &buffer)
 {
     uint32_t header = toUint32();
     Utils::encodeToLittleEndianBuffer(header, buffer);

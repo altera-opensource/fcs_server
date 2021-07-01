@@ -30,6 +30,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
+#ifndef LOGGER_H
+#define LOGGER_H
+
 #include <iostream>
 #include <string>
 
@@ -56,3 +59,5 @@ class Logger
         static std::string getLogLevelString(LogLevel level);
         static LogLevel currentLogLevel;
 };
+
+#endif /* LOGGER_H */

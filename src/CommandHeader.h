@@ -34,12 +34,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define COMMANDHEADER_H
 
 #include <stddef.h>
+#include <vector>
 
 class CommandHeader
 {
     public:
-        void parse(unsigned char buffer[sizeof(uint32_t)]);
-        void encode(unsigned char buffer[sizeof(uint32_t)]);
+        void parse(std::vector<uint8_t> &buffer);
+        void encode(std::vector<uint8_t> &buffer);
         static size_t getRequiredSize()
         {
             return sizeof(uint32_t);

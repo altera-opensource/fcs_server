@@ -42,13 +42,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void TcpServer::run(
     uint32_t portNumber,
-    void (*onMessage)(unsigned char*, size_t, unsigned char**, size_t&))
+    void (*onMessage)(std::vector<uint8_t>&, std::vector<uint8_t>&))
 {
     setup(portNumber);
     Logger::log("Server started on port " + std::to_string(portNumber));
 
-    std::unique_ptr<unsigned char[]> messageBuffer(
-        new unsigned char[kMaxMessageSizeInBytes]);
     while (true)
     {
         for (unsigned int i = 1; i < kNumberOfSockets; i++)
@@ -72,7 +70,7 @@ void TcpServer::run(
         {
             if (sockets[i].fd != -1)
             {
-                handleEventIfAny(sockets[i], messageBuffer.get(), onMessage);
+                handleEventIfAny(sockets[i], onMessage);
             }
         }
     }
@@ -144,8 +142,7 @@ void TcpServer::dropUnusedConnections()
 
 void TcpServer::handleEventIfAny(
     pollfd &socket,
-    unsigned char *messageBuffer,
-    void (*onMessage)(unsigned char*, size_t, unsigned char**, size_t&))
+    void (*onMessage)(std::vector<uint8_t>&, std::vector<uint8_t>&))
 {
     if (socket.fd == serverSocketFd && socket.revents == POLLIN)
     {
@@ -153,11 +150,13 @@ void TcpServer::handleEventIfAny(
     }
     else if (socket.revents == POLLIN)
     {
-        int messageSize = recv(
-            socket.fd, messageBuffer, kMaxMessageSizeInBytes, 0);
-        if (messageSize == -1 && errno != EWOULDBLOCK)
+        messageBuffer.resize(kMaxMessageSizeInBytes);
+        ssize_t messageSize = recv(
+            socket.fd, messageBuffer.data(), messageBuffer.size(), 0);
+        if (messageSize == -1)
         {
             Logger::logWithReturnCode("Recv failed", errno, Error);
+            closeConnectionAndEnableForReuse(socket);
         }
         else if (messageSize == 0)
         {
@@ -165,19 +164,18 @@ void TcpServer::handleEventIfAny(
         }
         else if (messageSize > 0)
         {
+            messageBuffer.resize(messageSize);
             Logger::log("Received message: Socket fd: "
                 + std::to_string(socket.fd), Info);
-            size_t responseSize = 0;
-            unsigned char *responseBuffer = nullptr;
+            std::vector<uint8_t> responseBuffer;
 
-            onMessage(
-                messageBuffer, messageSize, &responseBuffer, responseSize);
+            onMessage(messageBuffer, responseBuffer);
 
-            if (responseSize > 0 && responseBuffer != nullptr)
+            if (responseBuffer.size() > 0)
             {
                 Logger::log("Sending Response: "
-                    + std::to_string(responseSize) + " bytes", Info);
-                if (send(socket.fd, responseBuffer, responseSize, 0) == -1)
+                    + std::to_string(responseBuffer.size()) + " bytes", Info);
+                if (send(socket.fd, responseBuffer.data(), responseBuffer.size(), 0) == -1)
                 {
                     Logger::logWithReturnCode("Send failed", errno, Error);
                 }
@@ -187,7 +185,6 @@ void TcpServer::handleEventIfAny(
                 Logger::log("No data to send. Closing connection", Info);
                 closeConnectionAndEnableForReuse(socket);
             }
-            delete[] responseBuffer;
         }
     }
     else if (socket.revents == POLLHUP || socket.revents == POLLERR)

@@ -36,19 +36,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string.h>
 
-bool VerifierProtocol::parseMessage(
-    unsigned char *messageBuffer, size_t messageSize)
+bool VerifierProtocol::parseMessage(std::vector<uint8_t> &messageBuffer)
 {
-    if (messageSize < CommandHeader::getRequiredSize())
+    if (messageBuffer.size() < CommandHeader::getRequiredSize())
     {
         Logger::log("Message Size is smaller than Command Header", Error);
         errorCode = invalidHeader;
         return false;
     }
-
     incomingHeader.parse(messageBuffer);
 
-    size_t actualDataSizeInBytes = messageSize - CommandHeader::getRequiredSize();
+    size_t actualDataSizeInBytes = messageBuffer.size() - CommandHeader::getRequiredSize();
     size_t dataSizeFromHeaderInBytes = incomingHeader.length * WORD_SIZE;
     if (actualDataSizeInBytes != dataSizeFromHeaderInBytes)
     {
@@ -60,17 +58,18 @@ bool VerifierProtocol::parseMessage(
         return false;
     }
 
-    uint32_t payloadOffset = getPayloadOffset();
+    size_t payloadOffset = getPayloadOffset();
 
-    if (messageSize < payloadOffset)
+    if (messageBuffer.size() < payloadOffset)
     {
         Logger::log("Message Size too small", Error);
         errorCode = invalidHeader;
         return false;
     }
 
-    incomingPayload = messageBuffer + payloadOffset;
-    incomingPayloadSize = messageSize - payloadOffset;
+    incomingPayload = std::vector<uint8_t>(
+        messageBuffer.begin() + payloadOffset,
+        messageBuffer.end());
     if (!isMagicWordCorrect())
     {
         return false;
@@ -79,7 +78,7 @@ bool VerifierProtocol::parseMessage(
     return true;
 }
 
-uint32_t VerifierProtocol::getPayloadOffset()
+size_t VerifierProtocol::getPayloadOffset()
 {
     size_t messageReservedBytesCount = 0;
     if (incomingHeader.code == sigmaTeardown
@@ -96,7 +95,7 @@ bool VerifierProtocol::isMagicWordCorrect()
 {
     if (incomingHeader.code == sigmaTeardown)
     {
-        if (incomingPayloadSize < SIGMA_TEARDOWN_COMMAND_SIZE)
+        if (incomingPayload.size() < SIGMA_TEARDOWN_COMMAND_SIZE)
         {
             Logger::log("Message Size too small", Error);
             errorCode = invalidHeader;
@@ -116,47 +115,43 @@ bool VerifierProtocol::isMagicWordCorrect()
 }
 
 void VerifierProtocol::prepareResponseMessage(
-    unsigned char *payloadBuffer, size_t payloadSize,
-    unsigned char **responseBuffer, size_t &responseSize,
+    std::vector<uint8_t> const &payloadBuffer,
+    std::vector<uint8_t> &responseBuffer,
     const int returnCode)
 {
     Logger::log("Preparing response with return code "
         + std::to_string(returnCode));
-    if (payloadSize % WORD_SIZE != 0)
+    if (payloadBuffer.size() % WORD_SIZE != 0)
     {
         Logger::log("Payload size not divisible by word size", Error);
         prepareResponseMessage(
-            nullptr, 0, responseBuffer, responseSize, genericError);
+            std::vector<uint8_t>(), responseBuffer, genericError);
         return;
     }
-
-    size_t responsePayloadOffset = CommandHeader::getRequiredSize();
-    responseSize = payloadSize + responsePayloadOffset;
-    size_t lengthInWords = payloadSize / WORD_SIZE;
-
-    *responseBuffer = new unsigned char[responseSize];
 
     CommandHeader outgoingHeader;
     outgoingHeader.client = incomingHeader.client;
     outgoingHeader.id = incomingHeader.id;
-    outgoingHeader.length = lengthInWords;
+    outgoingHeader.length = payloadBuffer.size() / WORD_SIZE;
     outgoingHeader.res1 = 0;
     outgoingHeader.res2 = 0;
     outgoingHeader.code = returnCode;
 
-    if (payloadSize == 0 || payloadBuffer == nullptr)
-    {
-        outgoingHeader.length = 0;
-    }
-    else
+    responseBuffer.reserve(CommandHeader::getRequiredSize() + payloadBuffer.size());
+    responseBuffer.resize(CommandHeader::getRequiredSize());
+
+    Logger::log("encoding header", Debug);
+    outgoingHeader.encode(responseBuffer);
+
+    if (payloadBuffer.size() > 0)
     {
         Logger::log("copying payload to response buffer", Debug);
-        memcpy(*responseBuffer + responsePayloadOffset,
-            payloadBuffer,
-            payloadSize);
+        std::copy(
+            payloadBuffer.begin(),
+            payloadBuffer.end(),
+            std::back_inserter(responseBuffer));
     }
-    Logger::log("encoding header", Debug);
-    outgoingHeader.encode(*responseBuffer);
+
 }
 
 uint32_t VerifierProtocol::getCommandCode()
@@ -171,6 +166,13 @@ uint32_t VerifierProtocol::getSigmaTeardownSessionId()
         Logger::log("Attempt to read SessionId from message of type other than sigmaTeardown", Fatal);
         exit(1);
     }
+
+    //should never happen, as it is also checked during parsing
+    if (incomingPayload.size() < SIGMA_TEARDOWN_COMMAND_SIZE)
+    {
+        Logger::log("getSigmaTeardownSessionId: Message Size too small", Error);
+        exit(1);
+    }
     return Utils::decodeFromLittleEndianBuffer(
-        incomingPayload + SIGMA_TEARDOWN_SESSIONID_OFFSET);
+        incomingPayload, SIGMA_TEARDOWN_SESSIONID_OFFSET);
 }

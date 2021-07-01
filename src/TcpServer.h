@@ -30,9 +30,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
+#ifndef TCPSERVER_H
+#define TCPSERVER_H
+
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/poll.h>
+#include <vector>
 
 class TcpServer
 {
@@ -40,7 +44,7 @@ class TcpServer
         void run(
             uint32_t portNumber,
             void (*onMessage)(
-                unsigned char*, size_t, unsigned char**, size_t&));
+                std::vector<uint8_t>&, std::vector<uint8_t>&));
         void closeSockets();
 
     private:
@@ -48,9 +52,8 @@ class TcpServer
         void dropUnusedConnections();
         void handleEventIfAny(
             pollfd &socket,
-            unsigned char *messageBuffer,
             void (*onMessage)(
-                unsigned char*, size_t, unsigned char**, size_t&));
+                std::vector<uint8_t>&, std::vector<uint8_t>&));
         void acceptConnection();
         void closeConnectionAndEnableForReuse(pollfd &socket);
 
@@ -61,6 +64,11 @@ class TcpServer
         static const uint32_t kNumberOfSockets = kMaxNumberOfConnections + 1;
         static const uint32_t kMaxMessageSizeInBytes = 10000;
 
+        std::vector<uint8_t> messageBuffer
+            = std::vector<uint8_t>(kMaxMessageSizeInBytes);
+
         pollfd sockets[kNumberOfSockets];
         int serverSocketFd = -1;
 };
+
+#endif /* TCPSERVER_H */
