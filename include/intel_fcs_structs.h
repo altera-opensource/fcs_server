@@ -41,7 +41,7 @@
 #define ATTESTATION_SUBKEY_RSP_MAX_SZ		820	/* 205 words */
 #define ATTESTATION_MEASUREMENT_CMD_MAX_SZ	4092	/* 4K - 4 bytes */
 #define ATTESTATION_MEASUREMENT_RSP_MAX_SZ	4092	/* 4K - 4 bytes */
-
+#define ATTESTATION_CERTIFICATE_RSP_MAX_SZ	4096	/* 1024 words */
 /*
  * struct fcs_hps_generic_header
  * @cert_magic_num: Certificate Magic Word (0x25D04E7F)

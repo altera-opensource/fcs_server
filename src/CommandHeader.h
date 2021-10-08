@@ -46,12 +46,12 @@ class CommandHeader
             return sizeof(uint32_t);
         }
 
-        uint8_t client;
-        uint8_t id;
-        uint8_t res1;
-        uint16_t length;
-        uint8_t res2;
-        uint16_t code;
+        uint8_t client = 0;
+        uint8_t id = 0;
+        uint8_t res1 = 0;
+        uint16_t length = 0;
+        uint8_t res2 = 0;
+        uint16_t code = 0;
 
     private:
         void fromUint32(uint32_t input);

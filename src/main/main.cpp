@@ -98,12 +98,27 @@ void handleIncomingMessage(
                 statusReturnedFromFcs);
         }
         break;
+        case getAttestationCertificate:
+        {
+            fcsCallSucceeded = FcsCommunication::getAttestationCertificate(
+                verifierProtocol.getCertificateRequest(),
+                payloadFromFcs,
+                statusReturnedFromFcs);
+            if (statusReturnedFromFcs == -1)
+            {
+                Logger::log("GET_ATTESTATION_CERTIFICATE not supported by the driver. Returning unknown command.");
+                verifierProtocol.prepareEmptyResponseMessage(
+                responseBuffer, unknownCommand);
+                return;
+            }
+        }
+        break;
         default:
         {
             Logger::log("Command code not recognized: "
                 + std::to_string(verifierProtocol.getCommandCode()));
-            verifierProtocol.prepareResponseMessage(
-                std::vector<uint8_t>(), responseBuffer, unknownCommand);
+            verifierProtocol.prepareEmptyResponseMessage(
+                responseBuffer, unknownCommand);
             return;
         }
         break;

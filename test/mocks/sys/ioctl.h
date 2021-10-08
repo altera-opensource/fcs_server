@@ -30,38 +30,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
-#ifndef FCS_COMMUNICATION_H
-#define FCS_COMMUNICATION_H
-
 #include <stdint.h>
-#include <stddef.h>
-#include <vector>
-
 #include "intel_fcs-ioctl.h"
 #include "intel_fcs_structs.h"
 
-class FcsCommunication
-{
-    public:
-        static bool getChipId(
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool sigmaTeardown(uint32_t sessionId, int32_t &fcsStatus);
-        static bool createAttestationSubkey(
-            std::vector<uint8_t> &inBuffer,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool getMeasurement(
-            std::vector<uint8_t> &inBuffer,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool getAttestationCertificate(
-            uint8_t certificateRequest,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
+// Mock for _IOWR macro. It should be globally unique,
+// but for simplicity it just returns command code
+#define _IOWR(identifier, commandCode, dataType) commandCode
 
-    private:
-        static bool sendIoctl(intel_fcs_dev_ioctl *data, unsigned long commandCode);
-};
-
-#endif /* FCS_COMMUNICATION */
+int ioctl (int fileDescriptor, unsigned long int commandCode, intel_fcs_dev_ioctl *data);

@@ -30,11 +30,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
+#include <string.h>
+#include <unordered_map>
+
 #include "Logger.h"
 #include "utils.h"
 #include "VerifierProtocol.h"
-
-#include <string.h>
 
 bool VerifierProtocol::parseMessage(std::vector<uint8_t> &messageBuffer)
 {
@@ -70,7 +71,7 @@ bool VerifierProtocol::parseMessage(std::vector<uint8_t> &messageBuffer)
     incomingPayload = std::vector<uint8_t>(
         messageBuffer.begin() + payloadOffset,
         messageBuffer.end());
-    if (!isMagicWordCorrect())
+    if (!isPayloadSizeCorrect() || !isMagicWordCorrect())
     {
         return false;
     }
@@ -91,16 +92,28 @@ size_t VerifierProtocol::getPayloadOffset()
     return CommandHeader::getRequiredSize() + messageReservedBytesCount;
 }
 
+bool VerifierProtocol::isPayloadSizeCorrect()
+{
+    std::unordered_map<uint32_t, size_t> requiredSizeMap =
+    {
+        { sigmaTeardown, SIGMA_TEARDOWN_COMMAND_SIZE },
+        { getAttestationCertificate, GET_ATT_CERT_COMMAND_SIZE },
+        { getChipId, 0 }
+    };
+    auto itr = requiredSizeMap.find(incomingHeader.code);
+    if (itr != requiredSizeMap.end() && itr->second != incomingPayload.size())
+    {
+        Logger::log("Message Size incorrect", Error);
+        errorCode = invalidHeader;
+        return false;
+    }
+    return true;
+}
+
 bool VerifierProtocol::isMagicWordCorrect()
 {
     if (incomingHeader.code == sigmaTeardown)
     {
-        if (incomingPayload.size() < SIGMA_TEARDOWN_COMMAND_SIZE)
-        {
-            Logger::log("Message Size too small", Error);
-            errorCode = invalidHeader;
-            return false;
-        }
         uint32_t incomingMagic = Utils::decodeFromLittleEndianBuffer(
             incomingPayload);
         if (incomingMagic != SIGMA_TEARDOWN_MAGIC)
@@ -114,6 +127,13 @@ bool VerifierProtocol::isMagicWordCorrect()
     return true;
 }
 
+void VerifierProtocol::prepareEmptyResponseMessage(
+    std::vector<uint8_t> &responseBuffer,
+    const int returnCode)
+{
+    prepareResponseMessage(std::vector<uint8_t>(), responseBuffer, returnCode);
+}
+
 void VerifierProtocol::prepareResponseMessage(
     std::vector<uint8_t> const &payloadBuffer,
     std::vector<uint8_t> &responseBuffer,
@@ -124,8 +144,7 @@ void VerifierProtocol::prepareResponseMessage(
     if (payloadBuffer.size() % WORD_SIZE != 0)
     {
         Logger::log("Payload size not divisible by word size", Error);
-        prepareResponseMessage(
-            std::vector<uint8_t>(), responseBuffer, genericError);
+        prepareEmptyResponseMessage(responseBuffer, genericError);
         return;
     }
 
@@ -161,18 +180,34 @@ uint32_t VerifierProtocol::getCommandCode()
 
 uint32_t VerifierProtocol::getSigmaTeardownSessionId()
 {
+    //should never happen
     if (getCommandCode() != sigmaTeardown)
     {
-        Logger::log("Attempt to read SessionId from message of type other than sigmaTeardown", Fatal);
-        exit(1);
+        throw std::logic_error("Attempt to read SessionId from message of type other than sigmaTeardown");
     }
 
     //should never happen, as it is also checked during parsing
     if (incomingPayload.size() < SIGMA_TEARDOWN_COMMAND_SIZE)
     {
-        Logger::log("getSigmaTeardownSessionId: Message Size too small", Error);
-        exit(1);
+        throw std::logic_error("getSigmaTeardownSessionId: Message Size too small");
     }
     return Utils::decodeFromLittleEndianBuffer(
         incomingPayload, SIGMA_TEARDOWN_SESSIONID_OFFSET);
+}
+
+uint8_t VerifierProtocol::getCertificateRequest()
+{
+    //should never happen
+    if (getCommandCode() != getAttestationCertificate)
+    {
+        throw std::logic_error("Attempt to read certificate request from message of type other than getAttestationCertificate");
+    }
+
+    //should never happen, as it is also checked during parsing
+    if (incomingPayload.size() < GET_ATT_CERT_COMMAND_SIZE)
+    {
+        throw std::logic_error("getCertificateRequest: Message Size too small");
+    }
+    uint32_t getAttCertPayload = Utils::decodeFromLittleEndianBuffer(incomingPayload);
+    return  getAttCertPayload & GET_ATT_CERT_CERTIFICATE_REQUEST_MASK;
 }
