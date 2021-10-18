@@ -30,38 +30,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
-#ifndef FCS_COMMUNICATION_H
-#define FCS_COMMUNICATION_H
+#include "fcntl.h"
 
-#include <stdint.h>
-#include <stddef.h>
-#include <vector>
+#define FCS_DEVICE_PATH "/dev/fcs"
 
-#include "intel_fcs-ioctl.h"
-#include "intel_fcs_structs.h"
-
-class FcsCommunication
+int open(const char* file, int flags)
 {
-    public:
-        static bool getChipId(
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool sigmaTeardown(uint32_t sessionId, int32_t &fcsStatus);
-        static bool createAttestationSubkey(
-            std::vector<uint8_t> &inBuffer,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool getMeasurement(
-            std::vector<uint8_t> &inBuffer,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool getAttestationCertificate(
-            uint8_t certificateRequest,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-
-    private:
-        static bool sendIoctl(intel_fcs_dev_ioctl *data, unsigned long commandCode);
-};
-
-#endif /* FCS_COMMUNICATION */
+    Logger::log("open() mock called", Debug);
+    if (std::string(file) != std::string(FCS_DEVICE_PATH) || flags != O_RDWR)
+    {
+        return -1;
+    }
+    return MOCK_FILE_DESCRIPTOR;
+}

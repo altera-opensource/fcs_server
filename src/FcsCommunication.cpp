@@ -48,6 +48,7 @@ bool FcsCommunication::sendIoctl(
     intel_fcs_dev_ioctl *data,
     unsigned long commandCode)
 {
+    data->status = -1;
     int deviceFileDescriptor = open(FCS_DEVICE_PATH, O_RDWR);
     if (deviceFileDescriptor < 0)
     {
@@ -151,6 +152,30 @@ bool FcsCommunication::getMeasurement(
     }
 
     outBuffer.resize(data.com_paras.measurement.rsp_data_sz);
+    fcsStatus = data.status;
+    return true;
+}
+
+bool FcsCommunication::getAttestationCertificate(
+    uint8_t certificateRequest,
+    std::vector<uint8_t> &outBuffer,
+    int32_t &fcsStatus)
+{
+    Logger::log("Calling getAttestationCertificate");
+    outBuffer.resize(ATTESTATION_CERTIFICATE_RSP_MAX_SZ);
+
+    intel_fcs_dev_ioctl data = {};
+    data.com_paras.certificate.c_request = certificateRequest;
+    data.com_paras.certificate.rsp_data = (char*)outBuffer.data();
+    data.com_paras.certificate.rsp_data_sz = outBuffer.size();
+
+    if (!sendIoctl(&data, INTEL_FCS_DEV_ATTESTATION_GET_CERTIFICATE)
+        || data.com_paras.certificate.rsp_data_sz > ATTESTATION_CERTIFICATE_RSP_MAX_SZ)
+    {
+        return false;
+    }
+
+    outBuffer.resize(data.com_paras.certificate.rsp_data_sz);
     fcsStatus = data.status;
     return true;
 }

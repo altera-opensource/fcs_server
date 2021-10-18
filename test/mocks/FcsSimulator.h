@@ -30,38 +30,15 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
-#ifndef FCS_COMMUNICATION_H
-#define FCS_COMMUNICATION_H
-
 #include <stdint.h>
-#include <stddef.h>
-#include <vector>
 
-#include "intel_fcs-ioctl.h"
-#include "intel_fcs_structs.h"
-
-class FcsCommunication
+class FcsSimulator
 {
     public:
-        static bool getChipId(
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool sigmaTeardown(uint32_t sessionId, int32_t &fcsStatus);
-        static bool createAttestationSubkey(
-            std::vector<uint8_t> &inBuffer,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool getMeasurement(
-            std::vector<uint8_t> &inBuffer,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-        static bool getAttestationCertificate(
-            uint8_t certificateRequest,
-            std::vector<uint8_t> &outBuffer,
-            int32_t &fcsStatus);
-
-    private:
-        static bool sendIoctl(intel_fcs_dev_ioctl *data, unsigned long commandCode);
+        static uint32_t expectedSessionId;
+        static uint32_t expectedCreateSubkeyCommandLength;
+        static uint32_t expectedGetMeasurementCommandLength;
+        static uint32_t expectedGetMeasurementResponseLength;
+        static uint32_t expectedCertificateRequest;
+        static uint32_t expectedGetAttCertResponseLength;
 };
-
-#endif /* FCS_COMMUNICATION */

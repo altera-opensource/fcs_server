@@ -4,6 +4,9 @@ FCS Server source code can be found here: https://github.com/altera-opensource/f
 
 FCS Server source code now supports build for ARM64 (since HPS is ARM based) and x86 for testing purpose.
 
+Related components:
+- [Verifier](https://github.com/altera-opensource/verifier)
+
 ## Build 32 bit version
 
 To build x86 version, g++ compiler is needed. Go to FCS Server folder and run:
