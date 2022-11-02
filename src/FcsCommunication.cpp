@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -176,6 +176,34 @@ bool FcsCommunication::getAttestationCertificate(
     }
 
     outBuffer.resize(data.com_paras.certificate.rsp_data_sz);
+    fcsStatus = data.status;
+    return true;
+}
+
+bool FcsCommunication:: mailboxGeneric(
+    uint32_t commandCode,
+    std::vector<uint8_t> &inBuffer,
+    std::vector<uint8_t> &outBuffer,
+    int32_t &fcsStatus)
+{
+    Logger::log("Calling mailbox generic command with code: " + std::to_string(commandCode));
+    outBuffer.resize(MBOX_SEND_RSP_MAX_SZ);
+
+    intel_fcs_dev_ioctl data = {};
+    data.com_paras.mbox_send_cmd.mbox_cmd = commandCode;
+    data.com_paras.mbox_send_cmd.urgent = 0;
+    data.com_paras.mbox_send_cmd.cmd_data = (char*)inBuffer.data();
+    data.com_paras.mbox_send_cmd.cmd_data_sz = inBuffer.size();
+    data.com_paras.mbox_send_cmd.rsp_data = (char*)outBuffer.data();
+    data.com_paras.mbox_send_cmd.rsp_data_sz = outBuffer.size();
+
+    if (!sendIoctl(&data, INTEL_FCS_DEV_MBOX_SEND)
+        || data.com_paras.mbox_send_cmd.rsp_data_sz > MBOX_SEND_RSP_MAX_SZ)
+    {
+        return false;
+    }
+    Logger::log("Received data from mailbox. Bytes: " + std::to_string(data.com_paras.mbox_send_cmd.rsp_data_sz));
+    outBuffer.resize(data.com_paras.mbox_send_cmd.rsp_data_sz);
     fcsStatus = data.status;
     return true;
 }

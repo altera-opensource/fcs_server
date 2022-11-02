@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -57,6 +57,11 @@ class FcsCommunication
             int32_t &fcsStatus);
         static bool getAttestationCertificate(
             uint8_t certificateRequest,
+            std::vector<uint8_t> &outBuffer,
+            int32_t &fcsStatus);
+        static bool mailboxGeneric(
+            uint32_t commandCode,
+            std::vector<uint8_t> &inBuffer,
             std::vector<uint8_t> &outBuffer,
             int32_t &fcsStatus);
 

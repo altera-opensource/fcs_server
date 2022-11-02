@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -199,4 +199,18 @@ TEST(VerifierProtocolUT, prepareResponseMessage_withPayload)
     std::vector<uint8_t> payload {0x11, 0x22, 0x33, 0x44, 0xAA, 0xBB, 0xCC, 0xDD};
     verifierProtocol.prepareResponseMessage(payload, output, noError);
     EXPECT_EQ(expectedOutput, output);
+}
+
+TEST(VerifierProtocolUT, parseMessage_mctp)
+{
+    std::vector<uint8_t> input {0x94, 0x21, 0x00, 0x10, 0x11, 0x22, 0x33, 0x44, 0xAA, 0xBB, 0xCC, 0xDD};
+    std::vector<uint8_t> expectedPayload{0x11, 0x22, 0x33, 0x44, 0xAA, 0xBB, 0xCC, 0xDD};
+
+    VerifierProtocol verifierProtocol;
+    EXPECT_TRUE(verifierProtocol.parseMessage(input));
+
+    EXPECT_EQ(mctp, verifierProtocol.getCommandCode());
+    EXPECT_THROW(verifierProtocol.getCertificateRequest(), std::logic_error);
+    EXPECT_THROW(verifierProtocol.getSigmaTeardownSessionId(), std::logic_error);
+    EXPECT_EQ(expectedPayload, verifierProtocol.getIncomingPayload());
 }

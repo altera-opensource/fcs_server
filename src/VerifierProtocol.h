@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -39,7 +39,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #define RESERVED_BYTES_COUNT 4
-#define WORD_SIZE 4
 #define SIGMA_TEARDOWN_MAGIC 0xb852e2a4
 #define SIGMA_TEARDOWN_COMMAND_SIZE 8
 #define SIGMA_TEARDOWN_SESSIONID_OFFSET 4
@@ -54,7 +53,8 @@ enum CommandCode
     sigmaTeardown = 0xd5,
     getAttestationCertificate = 0x181,
     createAttestationSubKey = 0x182,
-    getMeasurement = 0x183
+    getMeasurement = 0x183,
+    mctp = 0x194
 };
 
 enum ErrorCode

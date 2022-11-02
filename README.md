@@ -43,6 +43,12 @@ Output files:
 1. fcsServer.**aarch64**
 1. fcsServer _where fcsServer is a copy of fcsServer.aarch64_
 
+## Build with DEBUG symbols and NO security protections
+
+```
+make DEBUG=1 all
+```
+
 ### Running FCS Server on HPS (Yocto linux)
 
 After building FCS Server, copy following files to HPS running Yocto OS to one folder:

@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -41,6 +41,7 @@ class CommandHeader
     public:
         void parse(std::vector<uint8_t> &buffer);
         void encode(std::vector<uint8_t> &buffer);
+        uint32_t toUint32();
         static size_t getRequiredSize()
         {
             return sizeof(uint32_t);
@@ -60,7 +61,6 @@ class CommandHeader
             uint32_t &destination,
             uint32_t source,
             uint8_t numberOfBits);
-        uint32_t toUint32();
 };
 
 #endif /* COMMANDHEADER_H */
