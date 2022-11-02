@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -31,7 +31,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "gtest/gtest.h"
-#include <vector>
 
 #include "FcsCommunication.h"
 #include "FcsSimulator.h"
@@ -43,7 +42,7 @@ TEST(FcsCommunicationUT, intel_fcs_dev_ioctlSizeTest)
 
 TEST(FcsCommunicationUT, getChipIdTest)
 {
-    std::vector<uint8_t> expectedPayload {0xEF, 0xCD, 0xAB, 0x89, 0x67, 0x45, 0x23, 0x01};
+    std::vector<uint8_t> expectedPayload {0x5A, 0xEC, 0xAC, 0x18, 0xCC, 0xC6, 0x82, 0x07};
     std::vector<uint8_t> payload;
     int32_t status;
     EXPECT_TRUE(FcsCommunication::getChipId(payload, status));
