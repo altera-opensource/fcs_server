@@ -3,7 +3,7 @@ This project, FPGA Crypto Service Server, is licensed as below
 
 ***************************************************************************
 
-Copyright 2020-2021 Intel Corporation. All Rights Reserved.
+Copyright 2020-2022 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -111,6 +111,15 @@ void handleIncomingMessage(
                 responseBuffer, unknownCommand);
                 return;
             }
+        }
+        break;
+        case mctp:
+        {
+            fcsCallSucceeded = FcsCommunication::mailboxGeneric(
+                CommandCode::mctp,
+                verifierProtocol.getIncomingPayload(),
+                payloadFromFcs,
+                statusReturnedFromFcs);
         }
         break;
         default:
