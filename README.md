@@ -6,15 +6,19 @@ FCS Server supports build for ARM64 (since HPS is ARM based) and x86 for testing
 
 - [Verifier](https://github.com/altera-opensource/verifier)
 
-## Build 32 bit version
+## Build for x86
 
-To build x86 version, g++ compiler is needed. Go to FCS Server folder and run:
+To build x86 version, g++ compiler is needed. Run:
 
 ```
 make x86
 ```
+optionally:
+```
+make test
+```
 
-## Build 64 bit version
+## Build for aarch64
 
 To build ARM64 executable on the Linux x86, AArch64 toolchain is needed. E.g. on Ubuntu 18, install:
 
@@ -22,7 +26,7 @@ To build ARM64 executable on the Linux x86, AArch64 toolchain is needed. E.g. on
 apt-get install g++-aarch64-linux-gnu
 ```
 
-Go to FCS Server folder and run:
+Run:
 
 ```
 make aarch64
@@ -36,7 +40,7 @@ To build for both architectures, run:
 make all
 ```
 
-Output files:
+Output files in "out" directory:
 
 1. fcsServer.**x86**
 1. fcsServer.**aarch64**
@@ -92,7 +96,11 @@ SYSTEMCTL commands:
     ```
     systemctl restart fcsServer
     ```
-
+- You can test FCS Server by sending a command using the files in FCSFilter/test/testfiles
+    ```
+    netcat [ FCS Server IP address ] [ FCS Server port] < ./get_chip_id.bin
+    e.g. netcat localhost 50001 < ./get_chip_id.bin
+    ```
 ### Logs
 
 To view FCS Server logs, run journalctl:

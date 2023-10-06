@@ -1,3 +1,4 @@
+
 /*
 This project, FPGA Crypto Service Server, is licensed as below
 
@@ -30,26 +31,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
+#include "MessageHandler.h"
 #include "FcsCommunication.h"
 #include "Logger.h"
-#include "TcpServer.h"
 #include "VerifierProtocol.h"
-
-#include <map>
-#include <signal.h>
-#include <string>
-
-TcpServer server;
-
-void onSignal(sig_atomic_t s)
-{
-    if (s == SIGINT || s == SIGTERM)
-    {
-        Logger::log("Signal caught, terminating");
-        server.closeSockets();
-        exit(0);
-    }
-}
 
 void handleIncomingMessage(
     std::vector<uint8_t> &messageBuffer,
@@ -114,9 +99,11 @@ void handleIncomingMessage(
         }
         break;
         case mctp:
+        case getIdCode:
+        case getDeviceIdentity:
         {
             fcsCallSucceeded = FcsCommunication::mailboxGeneric(
-                CommandCode::mctp,
+                verifierProtocol.getCommandCode(),
                 verifierProtocol.getIncomingPayload(),
                 payloadFromFcs,
                 statusReturnedFromFcs);
@@ -142,61 +129,4 @@ void handleIncomingMessage(
     }
     verifierProtocol.prepareResponseMessage(
         payloadFromFcs, responseBuffer, statusReturnedFromFcs);
-}
-
-void printUsageAndExit()
-{
-    Logger::log("Usage: <executable name> <port number> optional:<log level> e.g ./fcsServer 50001 Debug", Fatal);
-    Logger::log("Possible log levels: Debug, Info (default), Error, Fatal", Fatal);
-    exit(1);
-}
-
-int main(int argc, char* argv[])
-{
-    signal(SIGINT, onSignal);
-    signal(SIGTERM, onSignal);
-    if (argc == 3)
-    {
-        const std::map<std::string, LogLevel> LogLevelMap
-        {
-            { "Debug", Debug },
-            { "Info", Info },
-            { "Error", Error },
-            { "Fatal", Fatal }
-        };
-
-        auto itr = LogLevelMap.find(argv[2]);
-        if (itr == LogLevelMap.end())
-        {
-            printUsageAndExit();
-        }
-        Logger::setCurrentLogLevel(itr->second);
-    }
-    if (argc < 2 || argc > 3)
-    {
-        printUsageAndExit();
-    }
-    int portNumber;
-    try
-    {
-        portNumber = std::stoi(argv[1]);
-    }
-    catch(const std::exception& e)
-    {
-        printUsageAndExit();
-    }
-
-    try
-    {
-        Logger::log("FCS Server build on: "
-            + std::string(__DATE__) + " " + std::string(__TIME__), Debug);
-        server.run(portNumber, &handleIncomingMessage);
-    }
-    catch(const std::exception& e)
-    {
-        Logger::log(e.what(), Fatal);
-        exit(1);
-    }
-
-    return 0;
 }

@@ -120,6 +120,9 @@ Desktop.ini
 ######################
 /bin/
 /deploy/
+/gtest/
+/out/
+/FCSFilter/spdmSim/
 
 ######################
 # Logs
@@ -133,6 +136,7 @@ Desktop.ini
 *.*~
 *~
 .merge_file*
+spdmSim.tar.gz
 
 ######################
 # Gradle Wrapper

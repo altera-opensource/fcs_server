@@ -34,6 +34,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "intel_fcs-ioctl.h"
 #include "intel_fcs_structs.h"
 
+static const uint16_t GET_IDCODE = 0x10;
+
 // Mock for _IOWR macro. It should be globally unique,
 // but for simplicity it just returns command code
 #define _IOWR(identifier, commandCode, dataType) commandCode

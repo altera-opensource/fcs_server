@@ -180,7 +180,7 @@ bool FcsCommunication::getAttestationCertificate(
     return true;
 }
 
-bool FcsCommunication:: mailboxGeneric(
+bool FcsCommunication::mailboxGeneric(
     uint32_t commandCode,
     std::vector<uint8_t> &inBuffer,
     std::vector<uint8_t> &outBuffer,
