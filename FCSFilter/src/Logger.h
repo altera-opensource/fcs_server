@@ -30,49 +30,37 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
-#include "Logger.h"
+#ifndef LOGGER_H
+#define LOGGER_H
 
-LogLevel Logger::currentLogLevel=Info;
+#include <iostream>
+#include <string>
 
-void Logger::log(std::string message, LogLevel level)
+enum LogLevel
 {
-    if (level >= currentLogLevel)
-    {
-        std::cout << getLogLevelString(level) << message << std::endl;
-    }
-}
+    Debug,
+    Info,
+    Warning,
+    Error,
+    Fatal
+};
 
-void Logger::logWithReturnCode(std::string message, int errorCode, LogLevel level)
+class Logger
 {
-    if (level >= currentLogLevel)
-    {
-        std::cout
-            << getLogLevelString(level)
-            << message << " Return code: " << errorCode << std::endl;
-    }
-}
+    public:
+        static void log(std::string message, LogLevel level = Info);
+        static void logWithReturnCode(
+            std::string message, int errorCode, LogLevel level = Info);
+        static bool setCurrentLogLevel(std::string level);
+        static void setCurrentLogLevel(LogLevel level)
+        {
+            currentLogLevel = level;
+        }
 
-std::string Logger::getLogLevelString(LogLevel level)
-{
-    std::string levelString = "";
-    switch (level)
-    {
-        case Debug:
-            levelString = "DBG";
-            break;
-        case Info:
-            levelString = "INF";
-            break;
-        case Error:
-            levelString = "ERR";
-            break;
-        case Fatal:
-            levelString = "FTL";
-            break;
-        default:
-            //should never happen
-            levelString = "N/A";
-            break;
-    }
-    return "[" + levelString + "] ";
-}
+
+    private:
+        static std::string getLogLevelString(LogLevel level);
+        static LogLevel currentLogLevel;
+};
+
+#endif /* LOGGER_H */

@@ -30,9 +30,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
-#include <string.h>
-#include <unordered_map>
-
 #include "Logger.h"
 #include "utils.h"
 #include "VerifierProtocol.h"
@@ -94,14 +91,8 @@ size_t VerifierProtocol::getPayloadOffset()
 
 bool VerifierProtocol::isPayloadSizeCorrect()
 {
-    std::unordered_map<uint32_t, size_t> requiredSizeMap =
-    {
-        { sigmaTeardown, SIGMA_TEARDOWN_COMMAND_SIZE },
-        { getAttestationCertificate, GET_ATT_CERT_COMMAND_SIZE },
-        { getChipId, 0 }
-    };
-    auto itr = requiredSizeMap.find(incomingHeader.code);
-    if (itr != requiredSizeMap.end() && itr->second != incomingPayload.size())
+    auto itr = payloadSizeMap.find(incomingHeader.code);
+    if (itr != payloadSizeMap.end() && itr->second != incomingPayload.size())
     {
         Logger::log("Message Size incorrect", Error);
         errorCode = invalidHeader;
@@ -187,7 +178,7 @@ uint32_t VerifierProtocol::getSigmaTeardownSessionId()
     }
 
     //should never happen, as it is also checked during parsing
-    if (incomingPayload.size() < SIGMA_TEARDOWN_COMMAND_SIZE)
+    if (incomingPayload.size() < payloadSizeMap[sigmaTeardown])
     {
         throw std::logic_error("getSigmaTeardownSessionId: Message Size too small");
     }
@@ -204,7 +195,7 @@ uint8_t VerifierProtocol::getCertificateRequest()
     }
 
     //should never happen, as it is also checked during parsing
-    if (incomingPayload.size() < GET_ATT_CERT_COMMAND_SIZE)
+    if (incomingPayload.size() < payloadSizeMap[getAttestationCertificate])
     {
         throw std::logic_error("getCertificateRequest: Message Size too small");
     }

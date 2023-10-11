@@ -46,6 +46,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CHIPID_LOW 0x18ACEC5A
 #define CHIPID_HIGH 0x0782C6CC
 
+const uint32_t IDCODE = 0x6341D0DD;
+
 int ioctl(int fileDescriptor, unsigned long int commandCode, intel_fcs_dev_ioctl *data) {
     Logger::log("ioctl() mock called", Debug);
     if (data == nullptr) {
@@ -115,11 +117,23 @@ int ioctl(int fileDescriptor, unsigned long int commandCode, intel_fcs_dev_ioctl
             uint8_t* dataPtr = static_cast<uint8_t*>(data->com_paras.mbox_send_cmd.cmd_data);
             inputBuffer.assign(dataPtr, dataPtr + data->com_paras.mbox_send_cmd.cmd_data_sz);
             std::vector<uint8_t> outputBuffer;
-            int status = SpdmSimulator::sendCommand(inputBuffer, outputBuffer);
-            Logger::logWithReturnCode("SpdmSimulator::sendCommand called", status, Debug);
-            std::copy(outputBuffer.begin(), outputBuffer.end(), static_cast<uint8_t*>(data->com_paras.mbox_send_cmd.rsp_data));
-            data->com_paras.mbox_send_cmd.rsp_data_sz = outputBuffer.size();
-            data->status = 0;
+
+            switch (data->com_paras.mbox_send_cmd.mbox_cmd) {
+                case (GET_IDCODE): {
+                    memcpy(data->com_paras.mbox_send_cmd.rsp_data, &IDCODE, sizeof(IDCODE));
+                    data->com_paras.mbox_send_cmd.rsp_data_sz = sizeof(IDCODE);
+                    data->status = 0;
+                }
+                break;
+                default: {
+                    int status = SpdmSimulator::sendCommand(data->com_paras.mbox_send_cmd.mbox_cmd, inputBuffer, outputBuffer);
+                    Logger::logWithReturnCode("SpdmSimulator::sendCommand called", status, Debug);
+                    std::copy(outputBuffer.begin(), outputBuffer.end(), static_cast<uint8_t*>(data->com_paras.mbox_send_cmd.rsp_data));
+                    data->com_paras.mbox_send_cmd.rsp_data_sz = outputBuffer.size();
+                    data->status = 0;
+                }
+                break;
+            }
         }
         break;
 #else

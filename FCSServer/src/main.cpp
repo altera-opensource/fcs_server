@@ -30,34 +30,69 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************
 */
 
-#ifndef LOGGER_H
-#define LOGGER_H
 
-#include <iostream>
+#include "TcpServer.h"
+#include "MessageHandler.h"
+#include "Logger.h"
+
+#include <signal.h>
 #include <string>
 
-enum LogLevel
-{
-    Debug,
-    Info,
-    Error,
-    Fatal
-};
+TcpServer server;
 
-class Logger
+void onSignal(sig_atomic_t s)
 {
-    public:
-        static void log(std::string message, LogLevel level = Info);
-        static void logWithReturnCode(
-            std::string message, int errorCode, LogLevel level = Info);
-        static void setCurrentLogLevel(LogLevel level)
+    if (s == SIGINT || s == SIGTERM)
+    {
+        Logger::log("Signal caught, terminating");
+        server.closeSockets();
+        exit(0);
+    }
+}
+
+void printUsageAndExit()
+{
+    Logger::log("Usage: <executable name> <port number> optional:<log level> e.g ./fcsServer 50001 Debug", Fatal);
+    Logger::log("Possible log levels: Debug, Info (default), Warning, Error, Fatal", Fatal);
+    exit(1);
+}
+
+int main(int argc, char* argv[])
+{
+    signal(SIGINT, onSignal);
+    signal(SIGTERM, onSignal);
+    if (argc == 3)
+    {
+        if (!Logger::setCurrentLogLevel(std::string(argv[2])))
         {
-            currentLogLevel = level;
+            printUsageAndExit();
         }
+    }
+    if (argc < 2 || argc > 3)
+    {
+        printUsageAndExit();
+    }
+    int portNumber;
+    try
+    {
+        portNumber = std::stoi(argv[1]);
+    }
+    catch(const std::exception& e)
+    {
+        printUsageAndExit();
+    }
 
-    private:
-        static std::string getLogLevelString(LogLevel level);
-        static LogLevel currentLogLevel;
-};
+    try
+    {
+        Logger::log("FCS Server build on: "
+            + std::string(__DATE__) + " " + std::string(__TIME__), Debug);
+        server.run(portNumber, &handleIncomingMessage);
+    }
+    catch(const std::exception& e)
+    {
+        Logger::log(e.what(), Fatal);
+        exit(1);
+    }
 
-#endif /* LOGGER_H */
+    return 0;
+}

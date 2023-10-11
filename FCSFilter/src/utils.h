@@ -37,6 +37,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #define WORD_SIZE sizeof(uint32_t)
 
@@ -91,6 +92,26 @@ class Utils
             {
                 encodeToLittleEndianBuffer(input[i], output, i * WORD_SIZE);
             }
+        }
+
+        static std::vector<uint8_t> byteBufferFromWordPointer(const uint32_t *input, size_t inputSize)
+        {
+            std::vector<uint32_t> inVector;
+            inVector.assign(input, input + inputSize);
+            std::vector<uint8_t> outVector;
+            byteBufferFromWordBuffer(inVector, outVector);
+            return outVector;
+        }
+
+        static void writeToWordPointerFromByteBuffer(std::vector<uint8_t> &input, uint32_t **output, size_t &outputSize)
+        {
+            std::vector<uint32_t> wordBuffer = wordBufferFromByteBuffer(input);
+            if (outputSize < wordBuffer.size())
+            {
+                throw std::invalid_argument("writeToWordPointerFromByteBuffer: output size too small");
+            }
+            std::copy(wordBuffer.begin(), wordBuffer.end(), *output);
+            outputSize = wordBuffer.size();
         }
 };
 
